@@ -11,7 +11,7 @@ int main() {
 
     int pipes[2];
     if(pipe(pipes)==-1){
-        perror("Cannot create pip");
+        perror("Cannot create pipe");
         exit(-1);
     }
 
@@ -21,14 +21,16 @@ int main() {
         perror("Cannot fork");
 
     }else if(calcPid==0){//child
-        char* args[] = {const_cast<char *>("./calc.exe"), nullptr};
+        char pipeRead[sizeof(int)+1];
+        sprintf(pipeRead, "%d", pipes[READ]);
+        char* args[] = {const_cast<char *>("./calc.exe"), pipeRead,nullptr};
         if(execvp(args[0], args)<0){
             perror("cannot exec calc");
             exit(-2);
         };
-    }else{
-        while(waitpid(calcPid, nullptr, WNOHANG)>0);
     }
+
+    write(pipes[WRITE], "ASDF", 5);
 
     if((displayPid=fork())==-1){
         perror("Cannot fork display");
