@@ -14,12 +14,27 @@ int main(int argc, char* args[]){
 //    cout<<buf<<endl;
 
     dup2(fd, fileno(stdin));
+//
+//    string s;
+//    getline(cin, s);
+//    cout<<s<<endl;
 
-    char c;
-    while(!cin.eof()){
-        cin>>c;
-        cout<<c;
+    if(cin.bad()){
+        perror("cin bad in calc");
+        exit(-10);
     }
+
+    while(!cin.eof()){
+        string s;
+        getline(cin, s);
+        cout<<s<<endl;
+    }
+//
+//    char c;
+//    while(!cin.eof()){
+//        cin>>c;
+//        cout<<c;
+//    }
 
     cout<<fd<<endl;
 }

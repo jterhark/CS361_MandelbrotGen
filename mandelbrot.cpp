@@ -30,7 +30,7 @@ int main() {
         };
     }
 
-    write(pipes[WRITE], "ASDF", 5);
+    write(pipes[WRITE], "ASDF\n", 5);
 
     if((displayPid=fork())==-1){
         perror("Cannot fork display");
