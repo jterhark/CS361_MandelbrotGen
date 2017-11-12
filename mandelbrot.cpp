@@ -1,18 +1,21 @@
 #include <iostream>
 #include <unistd.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/msg.h>
+#include <sys/types.h>
+#include <algorithm>
 
 #define READ 0
 #define WRITE 1
 #define SHMAX 4000
 
+using namespace std;
 
 int main() {
     int msgid1, msgid2, shmid, pipe1[2], pipe2[2];
-
+    pid_t calcPid, displayPid;
 
     //create pipes
     if (pipe(pipe1) == -1) {
@@ -25,27 +28,101 @@ int main() {
         exit(-4);
     }
 
+    if((msgid1 = msgget(IPC_PRIVATE, IPC_CREAT | 0660))==-1){
+        perror("Cannot create first message queue");
+        exit(-9);
+    }
+
+    if((msgid2 = msgget(IPC_PRIVATE, IPC_CREAT | 0660))==-1){
+        perror("Cannot create second message queue");
+        exit(-10);
+    }
+
+
     //create shared memory
     if ((shmid = shmget(IPC_PRIVATE, SHMAX * sizeof(int), IPC_CREAT | 0660)) == -1) {
         perror("Cannot create shared memory: ");
         exit(-1);
     }
 
-    std::cout << "Press enter to continue: " << std::endl;
+
+    if ((calcPid = fork()) == -1) {
+        perror("Cannot fork calculation process");
+        exit(-5);
+    } else if (calcPid == 0) {//calc child
+        close(pipe1[WRITE]);
+        close(pipe2[READ]);
+
+        dup2(pipe1[READ], STDIN_FILENO);
+        dup2(pipe2[WRITE], STDOUT_FILENO);
+
+        close(pipe1[READ]);
+        close(pipe2[WRITE]);
+
+        char *args[] = {const_cast<char *>("./calc"), nullptr};
+        if (execvp(args[0], args) < 0) {
+            perror("Cannot exec calc process");
+            exit(-6);
+        }
+    }
+
+    if ((displayPid = fork()) == -1) {
+        perror("Cannot fork display process");
+        exit(-7);
+    } else if (displayPid == 0) { //display child
+        close(pipe1[READ]);
+        close(pipe1[WRITE]);
+        close(pipe2[WRITE]);
+
+        dup2(pipe2[READ], STDIN_FILENO);
+
+        close(pipe2[READ]);
+
+        char *args[] = {const_cast<char *>("./display"), nullptr};
+        if (execvp(args[0], args) < 0) {
+            perror("Cannot exec display process");
+            exit(-8);
+        }
+    }
+
+    close(pipe1[READ]);
+    close(pipe2[READ]);
+    close(pipe2[WRITE]);
+
+
+    dup2(pipe1[WRITE], STDOUT_FILENO);
+
+    //close(pipe1[WRITE]);
+
+    cout<<"Hello from mandelbrot"<<endl;
+//    write(pipe1[WRITE], "mandel\n", 7);
+
+    int status;
+
+    wait4(calcPid, &status, WUNTRACED, nullptr);
+    std::cerr << "Calc processes exited with code " << WEXITSTATUS(status) << std::endl;
+
+    wait4(displayPid, &status, WUNTRACED, nullptr);
+    cerr << "Display process exited with code " << WEXITSTATUS(status) << std::endl;
+
+    cerr << "Press enter to continue: " << std::endl;
     std::cin.get();
 
+
+    //free message queues
+    if(msgctl(msgid1, IPC_RMID, nullptr) < 0){
+        perror("Cannot free first message queue");
+    }
+
+    if(msgctl(msgid2, IPC_RMID, nullptr) < 0){
+        perror("Cannot free second message queue");
+    }
 
     //free shared memory
     if (shmctl(shmid, IPC_RMID, nullptr) < 0) {
         perror("Cannot free shared memory: ");
-        exit(-2);
     }
 
-//    int pipes[2];
-//    if(pipe(pipes)==-1){
-//        perror("Cannot create pipe");
-//        exit(-1);
-//    }
 //
 //    pid_t calcPid, displayPid;
 //
