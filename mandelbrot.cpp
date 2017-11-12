@@ -10,20 +10,20 @@
 
 int main() {
 
-    int shmid;
-
-
-    if((shmid = shmget(IPC_PRIVATE, 4000*sizeof(int), IPC_CREAT | 0600))==-1){
-        perror("Cannot create shared memory: ");
-        exit(-1);
-    }
-
-    struct shmid_ds buf{};
-
-    if(shmctl(shmid, IPC_RMID, &buf) < 1){
-        perror("Cannot free shared memory: ");
-        exit(-2);
-    }
+//    int shmid;
+//
+//
+//    if((shmid = shmget(IPC_PRIVATE, 4000*sizeof(int), IPC_CREAT | 0660))==-1){
+//        perror("Cannot create shared memory: ");
+//        exit(-1);
+//    }
+//
+//    struct shmid_ds buf{};
+//
+//    if(shmctl(shmid, IPC_RMID, &buf) < 1){
+//        perror("Cannot free shared memory: ");
+//        exit(-2);
+//    }
 
 //    int pipes[2];
 //    if(pipe(pipes)==-1){
