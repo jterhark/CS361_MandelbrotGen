@@ -3,27 +3,43 @@
 #include <wait.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/msg.h>
 
 #define READ 0
 #define WRITE 1
+#define SHMAX 4000
 
 
 int main() {
+    int msgid1, msgid2, shmid, pipe1[2], pipe2[2];
 
-//    int shmid;
-//
-//
-//    if((shmid = shmget(IPC_PRIVATE, 4000*sizeof(int), IPC_CREAT | 0660))==-1){
-//        perror("Cannot create shared memory: ");
-//        exit(-1);
-//    }
-//
-//    struct shmid_ds buf{};
-//
-//    if(shmctl(shmid, IPC_RMID, &buf) < 1){
-//        perror("Cannot free shared memory: ");
-//        exit(-2);
-//    }
+
+    //create pipes
+    if (pipe(pipe1) == -1) {
+        perror("Cannot create first pipe");
+        exit(-3);
+    }
+
+    if (pipe(pipe2) == -1) {
+        perror("Cannot create second pipe");
+        exit(-4);
+    }
+
+    //create shared memory
+    if ((shmid = shmget(IPC_PRIVATE, SHMAX * sizeof(int), IPC_CREAT | 0660)) == -1) {
+        perror("Cannot create shared memory: ");
+        exit(-1);
+    }
+
+    std::cout << "Press enter to continue: " << std::endl;
+    std::cin.get();
+
+
+    //free shared memory
+    if (shmctl(shmid, IPC_RMID, nullptr) < 0) {
+        perror("Cannot free shared memory: ");
+        exit(-2);
+    }
 
 //    int pipes[2];
 //    if(pipe(pipes)==-1){
