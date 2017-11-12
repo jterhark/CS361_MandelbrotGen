@@ -26,6 +26,20 @@ int main(int argc, char* args[]){
     cout<<s<<endl;
     cerr<<"From Calc: "<<s<<endl<<flush;
 
+
+
+    double xMin, xMax, yMin, yMax;
+    int nRows, nCols, maxIters;
+
+    cin>>xMin>>xMax>>yMin>>yMax>>nRows>>nCols>>maxIters;
+
+    //cerr<<"xMin: " << xMin << " xMax" << xMax << " yMin: " <<yMin << "yMax: " <<yMax << " nRows: " << nRows << " nCols: "<<nCols<<" maxIters: "<<maxIters<<endl;
+
+    printf("%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
+
+
+
+
 //
 //    auto fd = atoi(args[1]);
 //    char buf[30];

@@ -1,6 +1,9 @@
 #include <iostream>
 #include <string>
 #include <sys/shm.h>
+#include <sys/msg.h>
+#include <cstring>
+#include "structs.h"
 
 using namespace std;
 
@@ -24,5 +27,19 @@ int main(int argc, char* args[]){
     if(shmdt(memory) < 0){
         perror("Cannot release shared memory in display");
     }
+
+    FilenameMessage msg;
+    strcpy(msg.filename, "message queue test");
+
+    if(msgsnd(msg2, &msg, sizeof(FilenameMessage) - sizeof(long int), 0)<0){
+        perror("Cannot send message in display");
+    }
+
+    double xMin, xMax, yMin, yMax;
+    int nRows, nCols, maxIters;
+
+    cin>>xMin>>xMax>>yMin>>yMax>>nRows>>nCols>>maxIters;
+
+    printf("Display: \n%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
 
 }

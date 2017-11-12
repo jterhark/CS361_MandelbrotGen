@@ -6,6 +6,8 @@
 #include <sys/msg.h>
 #include <sys/types.h>
 #include <algorithm>
+#include <cstring>
+#include "structs.h"
 
 #define READ 0
 #define WRITE 1
@@ -107,6 +109,49 @@ int main() {
 
 
     write(pipe1[WRITE], "Hello from mandelbrot\n", 22);
+
+    double xMin, xMax, yMin, yMax;
+    int nCols, nRows, maxIters;
+    xMin = -2.0;
+    xMax = 2.0;
+    yMin = -1.5;
+    yMax = 1.5;
+    nRows = 20;
+    nCols = 50;
+    maxIters = 100;
+
+    dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
+
+//    char xMinChar[sizeof(double) + sizeof(char)],
+//        xMaxChar[sizeof(double) + sizeof(char)],
+//        yMinChar[sizeof(double) + sizeof(char)],
+//        yMaxChar[sizeof(double) + sizeof(char)],
+//        nRowsChar[sizeof(int) + sizeof(char)],
+//        nColsChar[sizeof(int) + sizeof(char)],
+//        maxItersChar[sizeof(int) + sizeof(char)];
+//
+//
+//    sprintf(xMinChar, "%f\n", xMin);
+//    sprintf(yMinChar, "%f\n", yMin);
+//    sprintf(xMaxChar, "%f\n", xMax);
+//    sprintf(yMaxChar, "%f\n", yMax);
+//    sprintf(nRowsChar, "%d\n", nRows);
+//    sprintf(nColsChar, "%d\n", nCols);
+//    sprintf(maxItersChar, "%d\n", maxIters);
+//
+//    write(pipe1[WRITE], xMinChar, strlen(xMinChar) *sizeof(char));
+//    write(pipe1[WRITE], xMaxChar, strlen(xMaxChar)*sizeof(char));
+//    write(pipe1[WRITE], yMinChar, strlen(yMinChar)*sizeof(char));
+//    write(pipe1[WRITE], yMaxChar, strlen(yMaxChar)*sizeof(char));
+//    write(pipe1[WRITE], nRowsChar, strlen(nRowsChar)*sizeof(char));
+//    write(pipe1[WRITE], nColsChar, strlen(nColsChar)*sizeof(char));
+//    write(pipe1[WRITE], maxItersChar, strlen(maxItersChar)*sizeof(char));
+
+    FilenameMessage msg{};
+
+    msgrcv(msgid2, &msg, sizeof(msg), FILENAMEMESSAGETYPE, 0);
+
+    cout<<"Message: " << msg.filename << endl;
 
     int status;
 
