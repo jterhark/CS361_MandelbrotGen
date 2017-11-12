@@ -11,11 +11,17 @@
 #define WRITE 1
 #define SHMAX 4000
 
+//todo set signal handler for SIGCHLD
+
 using namespace std;
 
 int main() {
     int msgid1, msgid2, shmid, pipe1[2], pipe2[2];
     pid_t calcPid, displayPid;
+
+    char msgid1Char[sizeof(int)],
+            msgid2Char[sizeof(int)],
+            shmidChar[sizeof(int)];
 
     //create pipes
     if (pipe(pipe1) == -1) {
@@ -28,12 +34,12 @@ int main() {
         exit(-4);
     }
 
-    if((msgid1 = msgget(IPC_PRIVATE, IPC_CREAT | 0660))==-1){
+    if ((msgid1 = msgget(IPC_PRIVATE, IPC_CREAT | 0660)) == -1) {
         perror("Cannot create first message queue");
         exit(-9);
     }
 
-    if((msgid2 = msgget(IPC_PRIVATE, IPC_CREAT | 0660))==-1){
+    if ((msgid2 = msgget(IPC_PRIVATE, IPC_CREAT | 0660)) == -1) {
         perror("Cannot create second message queue");
         exit(-10);
     }
@@ -44,6 +50,11 @@ int main() {
         perror("Cannot create shared memory: ");
         exit(-1);
     }
+
+
+    sprintf(msgid1Char, "%d", msgid1);
+    sprintf(msgid2Char, "%d", msgid2);
+    sprintf(shmidChar, "%d", shmid);
 
 
     if ((calcPid = fork()) == -1) {
@@ -59,7 +70,9 @@ int main() {
         close(pipe1[READ]);
         close(pipe2[WRITE]);
 
-        char *args[] = {const_cast<char *>("./calc"), nullptr};
+        char *args[] = {const_cast<char *>("./calc"),
+                        shmidChar,
+                        msgid1Char, nullptr};
         if (execvp(args[0], args) < 0) {
             perror("Cannot exec calc process");
             exit(-6);
@@ -78,7 +91,10 @@ int main() {
 
         close(pipe2[READ]);
 
-        char *args[] = {const_cast<char *>("./display"), nullptr};
+        char *args[] = {const_cast<char *>("./display"),
+                        shmidChar,
+                        msgid1Char,
+                        msgid2Char, nullptr};
         if (execvp(args[0], args) < 0) {
             perror("Cannot exec display process");
             exit(-8);
@@ -90,12 +106,7 @@ int main() {
     close(pipe2[WRITE]);
 
 
-    dup2(pipe1[WRITE], STDOUT_FILENO);
-
-    //close(pipe1[WRITE]);
-
-    cout<<"Hello from mandelbrot"<<endl;
-//    write(pipe1[WRITE], "mandel\n", 7);
+    write(pipe1[WRITE], "Hello from mandelbrot\n", 22);
 
     int status;
 
@@ -108,13 +119,15 @@ int main() {
     cerr << "Press enter to continue: " << std::endl;
     std::cin.get();
 
+    //close pipe write end
+    close(pipe1[WRITE]);
 
     //free message queues
-    if(msgctl(msgid1, IPC_RMID, nullptr) < 0){
+    if (msgctl(msgid1, IPC_RMID, nullptr) < 0) {
         perror("Cannot free first message queue");
     }
 
-    if(msgctl(msgid2, IPC_RMID, nullptr) < 0){
+    if (msgctl(msgid2, IPC_RMID, nullptr) < 0) {
         perror("Cannot free second message queue");
     }
 
