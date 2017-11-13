@@ -3,6 +3,7 @@
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <cstring>
+#include <iomanip>
 #include "structs.h"
 
 using namespace std;
@@ -24,9 +25,7 @@ int main(int argc, char* args[]){
     auto memory = (int*) shmat(shmid, NULL, 0);
     int i = memory[0];
     cerr<<"Display number test: " <<i<<endl<<flush;
-    if(shmdt(memory) < 0){
-        perror("Cannot release shared memory in display");
-    }
+
 
     FilenameMessage msg;
     strcpy(msg.filename, "message queue test");
@@ -41,5 +40,18 @@ int main(int argc, char* args[]){
     cin>>xMin>>xMax>>yMin>>yMax>>nRows>>nCols>>maxIters;
 
     printf("Display: \n%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
+    printf("Display: %d", memory[0]);
+    printf("Display: %d\n", memory[20]);
+
+    for(int r = 0; r<nRows; ++r){
+        for(int c = 0; c<nCols; ++c){
+            cout<<*(memory+r*nCols + c) << " ";
+        }
+        cout<<endl;
+    }
+
+    if(shmdt(memory) < 0){
+        perror("Cannot release shared memory in display");
+    }
 
 }

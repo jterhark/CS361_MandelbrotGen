@@ -116,8 +116,8 @@ int main() {
     xMax = 2.0;
     yMin = -1.5;
     yMax = 1.5;
-    nRows = 20;
-    nCols = 50;
+    nRows = 50;
+    nCols = 80;
     maxIters = 100;
 
     dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
