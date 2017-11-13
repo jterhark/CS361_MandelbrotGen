@@ -107,11 +107,9 @@ int main() {
     close(pipe2[READ]);
     close(pipe2[WRITE]);
 
-
-    write(pipe1[WRITE], "Hello from mandelbrot\n", 22);
-
     double xMin, xMax, yMin, yMax;
     int nCols, nRows, maxIters;
+
     xMin = -2.0;
     xMax = 2.0;
     yMin = -1.5;
@@ -120,48 +118,48 @@ int main() {
     nCols = 80;
     maxIters = 100;
 
+//    xMin=-0.65;
+//    xMax = -0.5;
+//    yMin = 0.5;
+//    yMax = 0.65;
+//    nRows = 50;
+//    nCols = 80;
+//    maxIters = 100;
+
+
     dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
 
-//    char xMinChar[sizeof(double) + sizeof(char)],
-//        xMaxChar[sizeof(double) + sizeof(char)],
-//        yMinChar[sizeof(double) + sizeof(char)],
-//        yMaxChar[sizeof(double) + sizeof(char)],
-//        nRowsChar[sizeof(int) + sizeof(char)],
-//        nColsChar[sizeof(int) + sizeof(char)],
-//        maxItersChar[sizeof(int) + sizeof(char)];
-//
-//
-//    sprintf(xMinChar, "%f\n", xMin);
-//    sprintf(yMinChar, "%f\n", yMin);
-//    sprintf(xMaxChar, "%f\n", xMax);
-//    sprintf(yMaxChar, "%f\n", yMax);
-//    sprintf(nRowsChar, "%d\n", nRows);
-//    sprintf(nColsChar, "%d\n", nCols);
-//    sprintf(maxItersChar, "%d\n", maxIters);
-//
-//    write(pipe1[WRITE], xMinChar, strlen(xMinChar) *sizeof(char));
-//    write(pipe1[WRITE], xMaxChar, strlen(xMaxChar)*sizeof(char));
-//    write(pipe1[WRITE], yMinChar, strlen(yMinChar)*sizeof(char));
-//    write(pipe1[WRITE], yMaxChar, strlen(yMaxChar)*sizeof(char));
-//    write(pipe1[WRITE], nRowsChar, strlen(nRowsChar)*sizeof(char));
-//    write(pipe1[WRITE], nColsChar, strlen(nColsChar)*sizeof(char));
-//    write(pipe1[WRITE], maxItersChar, strlen(maxItersChar)*sizeof(char));
+    DoneMessage done{};
+    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+    cout<<"Both children are done" <<endl;
 
-    FilenameMessage msg{};
+    xMin=-0.65;
+    xMax = -0.5;
+    yMin = 0.5;
+    yMax = 0.65;
+    nRows = 50;
+    nCols = 80;
+    maxIters = 100;
 
-    msgrcv(msgid2, &msg, sizeof(msg), FILENAMEMESSAGETYPE, 0);
+    dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
 
-    cout<<"Message: " << msg.filename << endl;
+    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+    cout<<"Both children are done" <<endl;
+
+    kill(calcPid, SIGUSR1);
+    kill(displayPid, SIGUSR1);
 
     int status;
 
     wait4(calcPid, &status, WUNTRACED, nullptr);
-    std::cerr << "Calc processes exited with code " << WEXITSTATUS(status) << std::endl;
+    cout << "Calc processes exited with code " << WEXITSTATUS(status) << std::endl;
 
     wait4(displayPid, &status, WUNTRACED, nullptr);
-    cerr << "Display process exited with code " << WEXITSTATUS(status) << std::endl;
+    cout << "Display process exited with code " << WEXITSTATUS(status) << std::endl;
 
-    cerr << "Press enter to continue: " << std::endl;
+    cout << "Press enter to continue: " << std::endl;
     std::cin.get();
 
     //close pipe write end
@@ -181,37 +179,6 @@ int main() {
         perror("Cannot free shared memory: ");
     }
 
-//
-//    pid_t calcPid, displayPid;
-//
-//    if((calcPid=fork())==-1){
-//        perror("Cannot fork");
-//
-//    }else if(calcPid==0){//child
-//        char pipeRead[sizeof(int)+1];
-//        sprintf(pipeRead, "%d", pipes[READ]);
-//        char* args[] = {const_cast<char *>("./calc.exe"), pipeRead ,nullptr};
-//        if(execvp(args[0], args)<0){
-//            perror("cannot exec calc");
-//            exit(-2);
-//        };
-//    }
-//
-//    write(pipes[WRITE], "ASDF\n", 5);
-//
-//    if((displayPid=fork())==-1){
-//        perror("Cannot fork display");
-//        exit(-3);
-//    }else if(displayPid==0){
-//        char* args[] = {const_cast<char *>("./display.exe"), nullptr};
-//        if(execvp(args[0], args)<0){
-//            perror("cannot exec display");
-//            exit(-2);
-//        };
-//    }
-//
-//    while(waitpid(calcPid, nullptr, WNOHANG)>0);
-//    while(waitpid(displayPid, nullptr, WNOHANG)>0);
 
     //dup2(mypipe[READ], stdin)
     //data = shmat(shmid, NULL, shmflg)
