@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iomanip>
 #include <signal.h>
+#include <fstream>
 #include "structs.h"
 
 using namespace std;
@@ -42,6 +43,27 @@ int main(int argc, char* args[]){
 
         cin >> xMin >> xMax >> yMin >> yMax >> nRows >> nCols >> maxIters;
 
+        FilenameMessage fMessage;
+
+        msgrcv(msg2, &fMessage, sizeof(FilenameMessage) - sizeof(long int), FILENAMEMESSAGETYPE, 0);
+        cout<<fMessage.filename<<endl;
+
+        ofstream file;
+        bool write = false;
+
+        if(strcmp(fMessage.filename, "")!=0){
+            if(ifstream(fMessage.filename)){
+                cerr<<"File already exists"<<endl;
+            }else {
+                file = ofstream(fMessage.filename);
+                if (!file) {
+                    cerr<<"Cannot create file"<<endl;
+                }else{
+                    write=true;
+                }
+            }
+        }
+
         printf("Display: \n%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
         printf("Display: %d", memory[0]);
         printf("Display: %d\n", memory[20]);
@@ -53,9 +75,17 @@ int main(int argc, char* args[]){
                     cout << " ";
                 else
                     cout << colors[n % 15];
+                if(write){
+                    file<<n<<" ";
+                }
             }
             cout << endl;
+            if(write)
+                file<<endl;
         }
+
+        if(write)
+            file.close();
 
         ++total;
 

@@ -110,6 +110,8 @@ int main() {
     while(true){
         double xMin, xMax, yMin, yMax;
         int nCols, nRows, maxIters = 100;
+        string fName;
+        FilenameMessage fMessage;
 
         cout<<"xMin (<-2.0 to exit): ";
         cin>>xMin;
@@ -128,7 +130,16 @@ int main() {
         cin>>nRows;
         cout<<"nCols:";
         cin>>nCols;
+        cout<<"filename (enter to skip):";
+        getline(cin, fName);//ignore newline from last answer
+        getline(cin, fName);
         cout<<endl;
+
+        strncpy(fMessage.filename, fName.c_str(), 250);
+
+        if(msgsnd(msgid2, &fMessage, sizeof(FilenameMessage) - sizeof(long int), 0) == -1){
+            perror("Cannot send file message to display");
+        }
 
         dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
 
@@ -137,10 +148,7 @@ int main() {
         msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
         cout<<"Both children are done" <<endl;
     }
-//
-//    double xMin, xMax, yMin, yMax;
-//    int nCols, nRows, maxIters;
-//
+
 //    xMin = -2.0;
 //    xMax = 2.0;
 //    yMin = -1.5;
@@ -148,22 +156,6 @@ int main() {
 //    nRows = 50;
 //    nCols = 80;
 //    maxIters = 100;
-
-//    xMin=-0.65;
-//    xMax = -0.5;
-//    yMin = 0.5;
-//    yMax = 0.65;
-//    nRows = 50;
-//    nCols = 80;
-//    maxIters = 100;
-
-
-//    dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
-
-//    DoneMessage done{};
-//    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-//    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-//    cout<<"Both children are done" <<endl;
 //
 //    xMin=-0.65;
 //    xMax = -0.5;
@@ -172,12 +164,6 @@ int main() {
 //    nRows = 50;
 //    nCols = 80;
 //    maxIters = 100;
-
-//    dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
-//
-//    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-//    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-//    cout<<"Both children are done" <<endl;
 
     kill(calcPid, SIGUSR1);
     kill(displayPid, SIGUSR1);
