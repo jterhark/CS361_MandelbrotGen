@@ -107,16 +107,47 @@ int main() {
     close(pipe2[READ]);
     close(pipe2[WRITE]);
 
-    double xMin, xMax, yMin, yMax;
-    int nCols, nRows, maxIters;
+    while(true){
+        double xMin, xMax, yMin, yMax;
+        int nCols, nRows, maxIters = 100;
 
-    xMin = -2.0;
-    xMax = 2.0;
-    yMin = -1.5;
-    yMax = 1.5;
-    nRows = 50;
-    nCols = 80;
-    maxIters = 100;
+        cout<<"xMin (<-2.0 to exit): ";
+        cin>>xMin;
+
+        if(xMin<-2.0){
+            break;
+        }
+
+        cout<<"\nxMax:";
+        cin>>xMax;
+        cout<<"yMin:";
+        cin>>yMin;
+        cout<<"yMax";
+        cin>>yMax;
+        cout<<"nRows";
+        cin>>nRows;
+        cout<<"nCols:";
+        cin>>nCols;
+        cout<<endl;
+
+        dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
+
+        DoneMessage done{};
+        msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+        msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+        cout<<"Both children are done" <<endl;
+    }
+//
+//    double xMin, xMax, yMin, yMax;
+//    int nCols, nRows, maxIters;
+//
+//    xMin = -2.0;
+//    xMax = 2.0;
+//    yMin = -1.5;
+//    yMax = 1.5;
+//    nRows = 50;
+//    nCols = 80;
+//    maxIters = 100;
 
 //    xMin=-0.65;
 //    xMax = -0.5;
@@ -127,26 +158,26 @@ int main() {
 //    maxIters = 100;
 
 
-    dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
+//    dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
 
-    DoneMessage done{};
-    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-    cout<<"Both children are done" <<endl;
+//    DoneMessage done{};
+//    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+//    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+//    cout<<"Both children are done" <<endl;
+//
+//    xMin=-0.65;
+//    xMax = -0.5;
+//    yMin = 0.5;
+//    yMax = 0.65;
+//    nRows = 50;
+//    nCols = 80;
+//    maxIters = 100;
 
-    xMin=-0.65;
-    xMax = -0.5;
-    yMin = 0.5;
-    yMax = 0.65;
-    nRows = 50;
-    nCols = 80;
-    maxIters = 100;
-
-    dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
-
-    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-    cout<<"Both children are done" <<endl;
+//    dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
+//
+//    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+//    msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
+//    cout<<"Both children are done" <<endl;
 
     kill(calcPid, SIGUSR1);
     kill(displayPid, SIGUSR1);

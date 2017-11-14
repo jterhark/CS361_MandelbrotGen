@@ -23,8 +23,6 @@ void cleanUp(){
 }
 
 int main(int argc, char *args[]) {
-    cerr << "in calc" << endl << flush;
-
     signal(SIGUSR1, sigUser1Handler);
     atexit(cleanUp);
 
