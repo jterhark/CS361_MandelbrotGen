@@ -13,7 +13,7 @@ int* memory;
 int total = 0;
 
 void sigUser1Handler(int sig){
-    exit(total); //todo number of images
+    exit(total);
 }
 
 void cleanUp(){
@@ -25,6 +25,8 @@ void cleanUp(){
 int main(int argc, char *args[]) {
     signal(SIGUSR1, sigUser1Handler);
     atexit(cleanUp);
+
+    total = 0;
 
     int shmid = atoi(args[1]);
     int msgid = atoi(args[2]);

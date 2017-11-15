@@ -48,6 +48,7 @@ void cleanup() {
 
     int status;
 
+    //reap processes
     if(calcPid!=-1) {
         wait4(calcPid, &status, WUNTRACED, nullptr);
         cout << "Calc processes exited with code " << WEXITSTATUS(status) << std::endl;
@@ -70,7 +71,7 @@ int main() {
     signal(SIGSEGV, exitHandler);
     signal(SIGTERM, exitHandler);
     signal(SIGKILL, exitHandler);
-    signal(SIGSTOP, exitHandler);
+    signal(SIGCHLD, exitHandler);
 
     atexit(cleanup);
 
@@ -103,6 +104,7 @@ int main() {
     }
 
 
+    //convert to ids to strings to pass as parameters
     sprintf(msgid1Char, "%d", msgid1);
     sprintf(msgid2Char, "%d", msgid2);
     sprintf(shmidChar, "%d", shmid);
@@ -121,7 +123,7 @@ int main() {
         close(pipe1[READ]);
         close(pipe2[WRITE]);
 
-        char *args[] = {const_cast<char *>("./calc"),
+        char *args[] = {const_cast<char *>("./mandelCalc"),
                         shmidChar,
                         msgid1Char, nullptr};
         if (execvp(args[0], args) < 0) {
@@ -142,7 +144,7 @@ int main() {
 
         close(pipe2[READ]);
 
-        char *args[] = {const_cast<char *>("./display"),
+        char *args[] = {const_cast<char *>("./mandelDisplay"),
                         shmidChar,
                         msgid1Char,
                         msgid2Char, nullptr};
@@ -169,20 +171,27 @@ int main() {
             break;
         }
 
-        cout << "xMax:";
+        cout << "xMax: ";
         cin >> xMax;
-        cout << "yMin:";
+        cout << "yMin: ";
         cin >> yMin;
-        cout << "yMax";
+        cout << "yMax: ";
         cin >> yMax;
-        cout << "nRows";
+        cout << "nRows: ";
         cin >> nRows;
-        cout << "nCols:";
+        cout << "nCols: ";
         cin >> nCols;
+        cout << "Max iterations: ";
+        cin >> maxIters;
         cout << "filename (enter to skip):";
         getline(cin, fName);//ignore newline from last answer
         getline(cin, fName);
         cout << endl;
+
+        if(nRows*nCols >= SHMAX){
+            cerr<<"Please choose smaller values for nRows and nCols"<<endl;
+            continue;
+        }
 
         strncpy(fMessage.filename, fName.c_str(), 250);
 
@@ -195,7 +204,7 @@ int main() {
         DoneMessage done{};
         msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
         msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-        cout << "Both children are done" << endl;
+        cout<<endl;
     }
 
 //    xMin = -2.0;
@@ -214,20 +223,9 @@ int main() {
 //    nCols = 80;
 //    maxIters = 100;
 
-
-//
-//    cout << "Press enter to continue: " << std::endl;
-//    std::cin.get();
-
     //close pipe write end
     close(pipe1[WRITE]);
 
-
-    //dup2(mypipe[READ], stdin)
-    //data = shmat(shmid, NULL, shmflg)
-    //if data==(int*)-1...
-    //release shared memory shmdt(shmaddr) MUST BE DONE!!!
-    //use atexit()
 
     // ipcs -a show all resources
     // ipcrm remove resource
@@ -235,26 +233,8 @@ int main() {
     // -q msgid
     // -s semid
 
-
-    //message queue key = IPCPRIVATE flag IPC_CREATE
-    // int msgget(key, flag) check if < 0
-    //returns id
-
-    // int msgsnd(msgid, const void *msgp, size_t msgsz, int msgflg)
-    // msgsend(id, msg struct, size(msg)-size(long int), 0)
-    // struct{
-    //      long int //type
-    //      anything i want except pointers (payload)
-    // }msg;
-
-
-    //receive message
-    //ssize_t msgrcv(id, void memory pointer (where to store in memory), size allocated for memory pointer, long msgType ( can be zero), 0)
-    // msgType will force revieve to grab all structs with a long int matching it
-    //make sure ssize_t is the right number of bytes
-
-    //free msg queue
-    //msgctl(int msqid, IPC_RMID, NULL);
+    // children will be killed and reaped no matter what in cleanup (at exit)
+    signal(SIGCHLD, SIG_IGN);
 
     exit(0);
 }
