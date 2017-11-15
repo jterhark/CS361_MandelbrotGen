@@ -46,7 +46,6 @@ int main(int argc, char* args[]){
         FilenameMessage fMessage;
 
         msgrcv(msg2, &fMessage, sizeof(FilenameMessage) - sizeof(long int), FILENAMEMESSAGETYPE, 0);
-        cout<<fMessage.filename<<endl;
 
         ofstream file;
         bool write = false;
@@ -64,11 +63,14 @@ int main(int argc, char* args[]){
             }
         }
 
-        printf("Display: \n%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
-        printf("Display: %d", memory[0]);
-        printf("Display: %d\n", memory[20]);
-
         for (int r = 0; r < nRows; ++r) {
+            if(r==0){
+                cout<<setw(5)<<yMax;
+            }else if(r==nRows-1){
+                cout<<setw(5)<<yMin;
+            }else{
+                cout<<setw(6)<<setfill(' ');
+            }
             for (int c = 0; c < nCols; ++c) {
                 int n = *(memory + r * nCols + c);
                 if (n < 0)
@@ -83,6 +85,8 @@ int main(int argc, char* args[]){
             if(write)
                 file<<endl;
         }
+
+        cout<<setw(6)<<xMin<<setw(nCols)<<setfill(' ')<<xMax<<endl;
 
         if(write)
             file.close();

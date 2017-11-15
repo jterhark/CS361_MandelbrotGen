@@ -17,13 +17,62 @@
 
 using namespace std;
 
+int msgid1 = -1, msgid2 = -1, shmid = -1;
+pid_t calcPid = -1, displayPid = -1;
+
+void exitHandler(int signal){
+    exit(1);
+}
+
+void cleanup() {
+//free message queues
+    if (msgid1 != -1 && msgctl(msgid1, IPC_RMID, nullptr) < 0) {
+        perror("Cannot free first message queue");
+    }
+
+    if (msgid2 != -1 && msgctl(msgid2, IPC_RMID, nullptr) < 0) {
+        perror("Cannot free second message queue");
+    }
+
+    //free shared memory
+    if (shmid != -1 && shmctl(shmid, IPC_RMID, nullptr) < 0) {
+        perror("Cannot free shared memory: ");
+    }
+
+    //kill processes
+    if(calcPid!=-1)
+        kill(calcPid, SIGUSR1);
+
+    if(displayPid!=-1)
+        kill(displayPid, SIGUSR1);
+
+    int status;
+
+    if(calcPid!=-1) {
+        wait4(calcPid, &status, WUNTRACED, nullptr);
+        cout << "Calc processes exited with code " << WEXITSTATUS(status) << std::endl;
+    }
+
+    if(displayPid!=-1) {
+        wait4(displayPid, &status, WUNTRACED, nullptr);
+        cout << "Display process exited with code " << WEXITSTATUS(status) << std::endl;
+    }
+}
+
 int main() {
-    int msgid1, msgid2, shmid, pipe1[2], pipe2[2];
-    pid_t calcPid, displayPid;
+    int pipe1[2], pipe2[2];
 
     char msgid1Char[sizeof(int)],
             msgid2Char[sizeof(int)],
             shmidChar[sizeof(int)];
+
+    signal(SIGINT, exitHandler);
+    signal(SIGSEGV, exitHandler);
+    signal(SIGTERM, exitHandler);
+    signal(SIGKILL, exitHandler);
+    signal(SIGSTOP, exitHandler);
+
+    atexit(cleanup);
 
     //create pipes
     if (pipe(pipe1) == -1) {
@@ -107,37 +156,37 @@ int main() {
     close(pipe2[READ]);
     close(pipe2[WRITE]);
 
-    while(true){
+    while (true) {
         double xMin, xMax, yMin, yMax;
         int nCols, nRows, maxIters = 100;
         string fName;
         FilenameMessage fMessage;
 
-        cout<<"xMin (<-2.0 to exit): ";
-        cin>>xMin;
+        cout << "xMin (less than -2 to exit): ";
+        cin >> xMin;
 
-        if(xMin<-2.0){
+        if (xMin < -2.0) {
             break;
         }
 
-        cout<<"\nxMax:";
-        cin>>xMax;
-        cout<<"yMin:";
-        cin>>yMin;
-        cout<<"yMax";
-        cin>>yMax;
-        cout<<"nRows";
-        cin>>nRows;
-        cout<<"nCols:";
-        cin>>nCols;
-        cout<<"filename (enter to skip):";
+        cout << "xMax:";
+        cin >> xMax;
+        cout << "yMin:";
+        cin >> yMin;
+        cout << "yMax";
+        cin >> yMax;
+        cout << "nRows";
+        cin >> nRows;
+        cout << "nCols:";
+        cin >> nCols;
+        cout << "filename (enter to skip):";
         getline(cin, fName);//ignore newline from last answer
         getline(cin, fName);
-        cout<<endl;
+        cout << endl;
 
         strncpy(fMessage.filename, fName.c_str(), 250);
 
-        if(msgsnd(msgid2, &fMessage, sizeof(FilenameMessage) - sizeof(long int), 0) == -1){
+        if (msgsnd(msgid2, &fMessage, sizeof(FilenameMessage) - sizeof(long int), 0) == -1) {
             perror("Cannot send file message to display");
         }
 
@@ -146,7 +195,7 @@ int main() {
         DoneMessage done{};
         msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
         msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-        cout<<"Both children are done" <<endl;
+        cout << "Both children are done" << endl;
     }
 
 //    xMin = -2.0;
@@ -165,36 +214,13 @@ int main() {
 //    nCols = 80;
 //    maxIters = 100;
 
-    kill(calcPid, SIGUSR1);
-    kill(displayPid, SIGUSR1);
 
-    int status;
-
-    wait4(calcPid, &status, WUNTRACED, nullptr);
-    cout << "Calc processes exited with code " << WEXITSTATUS(status) << std::endl;
-
-    wait4(displayPid, &status, WUNTRACED, nullptr);
-    cout << "Display process exited with code " << WEXITSTATUS(status) << std::endl;
-
-    cout << "Press enter to continue: " << std::endl;
-    std::cin.get();
+//
+//    cout << "Press enter to continue: " << std::endl;
+//    std::cin.get();
 
     //close pipe write end
     close(pipe1[WRITE]);
-
-    //free message queues
-    if (msgctl(msgid1, IPC_RMID, nullptr) < 0) {
-        perror("Cannot free first message queue");
-    }
-
-    if (msgctl(msgid2, IPC_RMID, nullptr) < 0) {
-        perror("Cannot free second message queue");
-    }
-
-    //free shared memory
-    if (shmctl(shmid, IPC_RMID, nullptr) < 0) {
-        perror("Cannot free shared memory: ");
-    }
 
 
     //dup2(mypipe[READ], stdin)
@@ -230,6 +256,5 @@ int main() {
     //free msg queue
     //msgctl(int msqid, IPC_RMID, NULL);
 
-
-    return 0;
+    exit(0);
 }
