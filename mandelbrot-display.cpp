@@ -113,4 +113,6 @@ int main(int argc, char* args[]){
         }
     }
 
+    exit(total);
+
 }

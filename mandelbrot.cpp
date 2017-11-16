@@ -49,17 +49,29 @@ void cleanup() {
     if (displayPid != -1)
         kill(displayPid, SIGUSR1);
 
-    int status;
+    int status = 0;
 
     //reap processes
     if (calcPid != -1) {
-        wait4(calcPid, &status, WUNTRACED, nullptr);
-        cout << "Calc processes exited with code " << WEXITSTATUS(status) << std::endl;
+        if(waitpid(calcPid, &status, WUNTRACED)!=-1){
+            if(WIFEXITED(status)){
+                cout << "Calc process exited normally with code " << WEXITSTATUS(status) << std::endl;
+            }
+        }else{
+            perror("waitpid calc error");
+        }
+
     }
 
+    status=0;
     if (displayPid != -1) {
-        wait4(displayPid, &status, WUNTRACED, nullptr);
-        cout << "Display process exited with code " << WEXITSTATUS(status) << std::endl;
+        if(waitpid(displayPid, &status, WUNTRACED)!=-1){
+            if(WIFEXITED(status)){
+                cout << "Display process exited with code " << WEXITSTATUS(status) << std::endl;
+            }
+        }else{
+            perror("waitpid display error");
+        }
     }
 }
 
@@ -228,7 +240,7 @@ int main() {
     close(pipe1[WRITE]);
 
     // children will be killed and reaped no matter what in cleanup (at exit)
-    signal(SIGCHLD, SIG_IGN);
+    signal(SIGCHLD, SIG_DFL);
 
     exit(0);
 }

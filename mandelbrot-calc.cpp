@@ -14,6 +14,7 @@ int total = 0;
 
 //handle signal from mandelbrot
 void sigUser1Handler(int sig){
+    cerr<<total<<flush;
     exit(total);
 }
 
@@ -87,5 +88,7 @@ int main(int argc, char *args[]) {
             exit(-20);
         }
     }
+
+    exit(total);
 }
 
