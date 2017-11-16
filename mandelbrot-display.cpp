@@ -1,3 +1,8 @@
+/*
+ * Jake TerHark - jterha2
+ * CS361 - mandelbrot
+ */
+
 #include <iostream>
 #include <string>
 #include <sys/shm.h>

@@ -1,3 +1,8 @@
+/*
+ * Jake TerHark - jterha2
+ * CS361 - mandelbrot
+ */
+
 #include <iostream>
 #include <unistd.h>
 #include <iomanip>
@@ -14,7 +19,6 @@ int total = 0;
 
 //handle signal from mandelbrot
 void sigUser1Handler(int sig){
-    cerr<<total<<flush;
     exit(total);
 }
 
