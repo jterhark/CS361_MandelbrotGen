@@ -4,7 +4,7 @@
 #include <string>
 #include <sys/shm.h>
 #include <sys/msg.h>
-#include <signal.h>
+#include <csignal>
 #include "structs.h"
 
 using namespace std;
@@ -12,10 +12,12 @@ using namespace std;
 int* memory;
 int total = 0;
 
+//handle signal from mandelbrot
 void sigUser1Handler(int sig){
     exit(total);
 }
 
+//release shared memory
 void cleanUp(){
     if (shmdt(memory) < 0) {
         perror("Cannot release shared memory in calc");
@@ -23,25 +25,29 @@ void cleanUp(){
 }
 
 int main(int argc, char *args[]) {
+    //register signal handler and at exit functions
     signal(SIGUSR1, sigUser1Handler);
     atexit(cleanUp);
 
     total = 0;
 
+    //get message queue and shared memory id's
     int shmid = atoi(args[1]);
     int msgid = atoi(args[2]);
 
+    //attached shared memory
     memory = (int *) shmat(shmid, NULL, 0);
 
     double xMin, xMax, yMin, yMax;
     int nRows, nCols, maxIters;
 
+    //main loop
     while(true) {
 
+        //read values from stdin (pipe from mandelbrot)
         cin >> xMin >> xMax >> yMin >> yMax >> nRows >> nCols >> maxIters;
 
-        printf("%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
-
+        //mandelbrot calculations
         double deltaX = (xMax - xMin) / (nCols - 1);
         double deltaY = (yMax - yMin) / (nRows - 1);
 
@@ -69,10 +75,13 @@ int main(int argc, char *args[]) {
 
         }
 
+        //send values to stdout (mandelbrot-display)
+        printf("%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
+
         ++total;
 
+        //send done message to queue 1 (mandelbrot)
         DoneMessage msg{};
-
         if (msgsnd(msgid, &msg, sizeof(DoneMessage) - sizeof(long int), 0) == -1) {
             perror("Cannot send message queue message in calc");
             exit(-20);

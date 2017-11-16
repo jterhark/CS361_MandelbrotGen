@@ -11,16 +11,19 @@
 
 #define READ 0
 #define WRITE 1
-#define SHMAX 4000
+#define SHMAX 16000
 
 //todo set signal handler for SIGCHLD
 
 using namespace std;
 
-int msgid1 = -1, msgid2 = -1, shmid = -1;
-pid_t calcPid = -1, displayPid = -1;
+int   msgid1     = -1,
+      msgid2     = -1,
+      shmid      = -1;
+pid_t calcPid    = -1,
+      displayPid = -1;
 
-void exitHandler(int signal){
+void exitHandler(int signal) {
     exit(1);
 }
 
@@ -40,21 +43,21 @@ void cleanup() {
     }
 
     //kill processes
-    if(calcPid!=-1)
+    if (calcPid != -1)
         kill(calcPid, SIGUSR1);
 
-    if(displayPid!=-1)
+    if (displayPid != -1)
         kill(displayPid, SIGUSR1);
 
     int status;
 
     //reap processes
-    if(calcPid!=-1) {
+    if (calcPid != -1) {
         wait4(calcPid, &status, WUNTRACED, nullptr);
         cout << "Calc processes exited with code " << WEXITSTATUS(status) << std::endl;
     }
 
-    if(displayPid!=-1) {
+    if (displayPid != -1) {
         wait4(displayPid, &status, WUNTRACED, nullptr);
         cout << "Display process exited with code " << WEXITSTATUS(status) << std::endl;
     }
@@ -64,16 +67,20 @@ int main() {
     int pipe1[2], pipe2[2];
 
     char msgid1Char[sizeof(int)],
-            msgid2Char[sizeof(int)],
-            shmidChar[sizeof(int)];
+         msgid2Char[sizeof(int)],
+         shmidChar[sizeof(int)];
 
+    //handle signals to make sure memory is freed
     signal(SIGINT, exitHandler);
     signal(SIGSEGV, exitHandler);
     signal(SIGTERM, exitHandler);
     signal(SIGKILL, exitHandler);
     signal(SIGCHLD, exitHandler);
 
+    //free shared memory and message queues
     atexit(cleanup);
+
+    cout << "Jake TerHark - jterha2" << endl << "CS361 - Mandelbrot" << endl << endl;
 
     //create pipes
     if (pipe(pipe1) == -1) {
@@ -86,6 +93,7 @@ int main() {
         exit(-4);
     }
 
+    //create message queues
     if ((msgid1 = msgget(IPC_PRIVATE, IPC_CREAT | 0660)) == -1) {
         perror("Cannot create first message queue");
         exit(-9);
@@ -109,7 +117,7 @@ int main() {
     sprintf(msgid2Char, "%d", msgid2);
     sprintf(shmidChar, "%d", shmid);
 
-
+    //fork children and exec
     if ((calcPid = fork()) == -1) {
         perror("Cannot fork calculation process");
         exit(-5);
@@ -154,16 +162,20 @@ int main() {
         }
     }
 
+    //close unused pipe ends
     close(pipe1[READ]);
     close(pipe2[READ]);
     close(pipe2[WRITE]);
 
+    //main loop
     while (true) {
         double xMin, xMax, yMin, yMax;
-        int nCols, nRows, maxIters = 100;
-        string fName;
+        int    nCols, nRows, maxIters;
+
+        string          fName;
         FilenameMessage fMessage;
 
+        //get user input
         cout << "xMin (less than -2 to exit): ";
         cin >> xMin;
 
@@ -188,50 +200,32 @@ int main() {
         getline(cin, fName);
         cout << endl;
 
-        if(nRows*nCols >= SHMAX){
-            cerr<<"Please choose smaller values for nRows and nCols"<<endl;
+        //make sure result will fit in shared memory
+        if (nRows * nCols >= SHMAX) {
+            cerr << "Please choose smaller values for nRows and nCols" << endl;
             continue;
         }
 
+        //copy filename to message queue msg
         strncpy(fMessage.filename, fName.c_str(), 250);
 
+        //send filename on message queue 2
         if (msgsnd(msgid2, &fMessage, sizeof(FilenameMessage) - sizeof(long int), 0) == -1) {
             perror("Cannot send file message to display");
         }
 
+        //send info to calc process
         dprintf(pipe1[WRITE], "%f\n%f\n%f\n%f\n%d\n%d\n%d\n", xMin, xMax, yMin, yMax, nRows, nCols, maxIters);
 
+        //wait for two done messages on queue 1
         DoneMessage done{};
         msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
         msgrcv(msgid1, &done, sizeof(DoneMessage) - sizeof(long int), DONEMESSAGETYPE, 0);
-        cout<<endl;
+        cout << endl;
     }
-
-//    xMin = -2.0;
-//    xMax = 2.0;
-//    yMin = -1.5;
-//    yMax = 1.5;
-//    nRows = 50;
-//    nCols = 80;
-//    maxIters = 100;
-//
-//    xMin=-0.65;
-//    xMax = -0.5;
-//    yMin = 0.5;
-//    yMax = 0.65;
-//    nRows = 50;
-//    nCols = 80;
-//    maxIters = 100;
 
     //close pipe write end
     close(pipe1[WRITE]);
-
-
-    // ipcs -a show all resources
-    // ipcrm remove resource
-    // -m shmid
-    // -q msgid
-    // -s semid
 
     // children will be killed and reaped no matter what in cleanup (at exit)
     signal(SIGCHLD, SIG_IGN);
